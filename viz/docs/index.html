@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map</title>
+</head>
+<body>
+<div id="map"></div>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+<script src="js/nlmaps_2.3.55.iife.js"></script>
+<script src="js/styling.js"></script>
+<script src="js/interact.js"></script>
+<script>
+    var mapHolder = document.getElementById('map');
+    mapHolder.style.height = 'calc(100vh - 20px)';
+    var map = nlmaps.createMap(mapOpts);
+
+    var geoLayerPct = L.layerGroup().addTo(map);  // default activated
+    var geoLayerAbs = L.layerGroup();
+    var geoLayerNew = L.layerGroup();
+    var geoLayerDens = L.layerGroup();
+
+    var layerControl = {
+        "Percentage": geoLayerPct,
+        "Absoluut": geoLayerAbs,
+        "Nieuw": geoLayerNew,
+        "Dichtheid": geoLayerDens
+    };
+    L.control.layers(layerControl, {}).addTo(map);
+
+    function onEachFeaturePct(feature, layer) {
+        var gemeente_obj = covid_data[feature.properties.Code.toString()];
+        onEachFeatureBase(feature, layer, gemeente_obj, feature.properties);
+        layer.setStyle(getPctColorStyle(gemeente_obj, feature.properties));
+    }
+
+    function onEachFeatureAbs(feature, layer) {
+        var gemeente_obj = covid_data[feature.properties.Code.toString()];
+        onEachFeatureBase(feature, layer, gemeente_obj, feature.properties);
+        layer.setStyle(getAbsColorStyle(gemeente_obj));
+    }
+
+    function onEachFeatureNew(feature, layer) {
+        var gemeente_obj = covid_data[feature.properties.Code.toString()];
+        onEachFeatureBase(feature, layer, gemeente_obj, feature.properties);
+        layer.setStyle(getNewColorStyle(gemeente_obj));
+    }
+
+    function onEachFeatureDens(feature, layer) {
+        var gemeente_obj = covid_data[feature.properties.Code.toString()];
+        onEachFeatureBase(feature, layer, gemeente_obj, feature.properties);
+        layer.setStyle(getDensColorStyle(gemeente_obj, feature.properties));
+    }
+
+    const xhr_covid_data = new XMLHttpRequest();
+    xhr_covid_data.open('GET', 'data/today.json');
+    xhr_covid_data.setRequestHeader('Content-Type', 'application/json');
+    xhr_covid_data.responseType = 'json';
+    xhr_covid_data.onload = function() {
+        if (xhr_covid_data.status !== 200) return;
+        covid_data = xhr_covid_data.response;
+    };
+    xhr_covid_data.send();
+
+    const xhr_geolayers = new XMLHttpRequest();
+    xhr_geolayers.open('GET', 'data/gemeentegrenzen_simplified.geojson');
+    xhr_geolayers.setRequestHeader('Content-Type', 'application/json');
+    xhr_geolayers.responseType = 'json';
+    xhr_geolayers.onload = function() {
+        if (xhr_geolayers.status !== 200) return;
+        L.geoJSON(xhr_geolayers.response, {style: lineStyle,onEachFeature: onEachFeaturePct}).addTo(geoLayerPct);
+        L.geoJSON(xhr_geolayers.response, {style: lineStyle,onEachFeature: onEachFeatureAbs}).addTo(geoLayerAbs);
+        L.geoJSON(xhr_geolayers.response, {style: lineStyle,onEachFeature: onEachFeatureNew}).addTo(geoLayerNew);
+        L.geoJSON(xhr_geolayers.response, {style: lineStyle,onEachFeature: onEachFeatureDens}).addTo(geoLayerDens);
+    };
+    xhr_geolayers.send();
+
+</script>
+</body>
+</html>
