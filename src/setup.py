@@ -13,7 +13,10 @@ setup(
     packages=["fetchers", "util"],
     package_dir={'': '.'},
     entry_points={
-        'console_scripts': ['fetcher=util.script:run_fetcher'],
+        'console_scripts': [
+            'fetcher=util.script:run_fetcher',
+            'fetch_ecdc=fetchers.fetch_ecdc:fetch_ecdc',
+        ],
     },
     include_package_data=True,
     install_requires=[
