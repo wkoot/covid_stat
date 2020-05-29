@@ -53,5 +53,4 @@ class FetcherNL(BaseFetcher):
         if last_day.year > first_day.year:
             last_day = date(year=year, month=12, day=31)
 
-        # TODO - create data model
-        return dict(first_day=f"{first_day:%Y-%m-%d}", last_day=f"{last_day:%Y-%m-%d}", deaths=int(entry["Overledenen_1"]))
+        return self.data_entry(first_day=first_day, last_day=last_day, deaths=int(entry["Overledenen_1"]))

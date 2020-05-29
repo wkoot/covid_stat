@@ -1,12 +1,33 @@
 import json
 import requests
 from abc import ABC, abstractmethod
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, date
+from typing import List
+
+
+@dataclass
+class DataEntry(json.JSONEncoder):
+    country_code: str  # ISO 3166-1 alpha-2
+    first_day: date
+    last_day: date
+    deaths: int
+
+
+class DataEntryEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, DataEntry):
+            return o.__dict__
+
+        if isinstance(o, (date, datetime)):
+            return o.isoformat()
+
+        return super().default(self, o)
 
 
 class BaseFetcher(ABC):
     raw_data = []  # type: list
-    output_data = []  # type: list
+    output_data = []  # type: List[DataEntry]
 
     @property
     @abstractmethod
@@ -28,8 +49,11 @@ class BaseFetcher(ABC):
         pass
 
     @abstractmethod
-    def process_entry(self, entry) -> dict:
+    def process_entry(self, entry) -> DataEntry:
         pass
+
+    def data_entry(self, first_day: date, last_day: date, deaths: int) -> DataEntry:
+        return DataEntry(country_code=self.country_code, first_day=first_day, last_day=last_day, deaths=deaths)
 
     def process(self) -> None:
         for entry in self.raw_data:
@@ -37,12 +61,11 @@ class BaseFetcher(ABC):
             if not processed_entry:
                 continue
 
-            processed_entry['country'] = self.country_code  # TODO - create data model
             self.output_data.append(processed_entry)
 
     def store(self) -> None:
         with open(self.output_file, 'w') as json_outfile:
-            json.dump(self.output_data, json_outfile)
+            json.dump(self.output_data, json_outfile, cls=DataEntryEncoder)
 
     def run(self) -> None:
         self.prepare()
