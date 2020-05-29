@@ -6,7 +6,7 @@ from datetime import datetime
 
 class BaseFetcher(ABC):
     raw_data = []  # type: list
-    output_data = {}  # type: dict
+    output_data = []  # type: list
 
     @property
     @abstractmethod
@@ -14,7 +14,7 @@ class BaseFetcher(ABC):
         pass  # ISO 3166-1 alpha-2
 
     def __init__(self) -> None:
-        self.output_file = '../../data/{}_{:%Y-%m-%d}.json'.format(self.country_code, datetime.today())
+        self.output_file = 'data/{}_{:%Y-%m-%d}.json'.format(self.country_code, datetime.today())
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'curl/7.58.0 (+https://doemee.codefor.nl/)',
@@ -34,7 +34,11 @@ class BaseFetcher(ABC):
     def process(self) -> None:
         for entry in self.raw_data:
             processed_entry = self.process_entry(entry)
-            self.output_data.update(processed_entry)
+            if not processed_entry:
+                continue
+
+            processed_entry['country'] = self.country_code  # TODO - create data model
+            self.output_data.append(processed_entry)
 
     def store(self) -> None:
         with open(self.output_file, 'w') as json_outfile:

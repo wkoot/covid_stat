@@ -1,3 +1,4 @@
+from datetime import datetime, date
 from time import sleep
 
 from util import iter_chunks
@@ -37,6 +38,20 @@ class FetcherNL(BaseFetcher):
         Sample entry:
             { "Perioden": "2000X000", "Overledenen_1": 956.0 }
         """
-        key = self.intervals[entry["Perioden"]]
-        value = int(entry["Overledenen_1"])
-        return dict([(key, value)])
+        if "JJ" in entry["Perioden"]:
+            return None  # period "2019JJ00" indicates data for that entire year
+
+        year = int(entry["Perioden"][0:4])  # int to compare later
+        week_number = int(entry["Perioden"][6:])  # int to strip leading zeros
+        year_week = f"{year}-W{week_number}"  # ISO 8601 Week date
+
+        first_day = datetime.strptime(year_week + "-1", "%G-W%V-%u").date()
+        last_day = datetime.strptime(year_week + "-7", "%G-W%V-%u").date()
+
+        if first_day.year < year:
+            first_day = date(year=year, month=1, day=1)
+        if last_day.year > first_day.year:
+            last_day = date(year=year, month=12, day=31)
+
+        # TODO - create data model
+        return dict(first_day=f"{first_day:%Y-%m-%d}", last_day=f"{last_day:%Y-%m-%d}", deaths=int(entry["Overledenen_1"]))
