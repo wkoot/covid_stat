@@ -15,7 +15,7 @@ def fetch_ecdc() -> None:
 
     output_data = {}
     for entry in data_json['records']:
-        country_code = entry['geoId'].lower()
+        country_code = entry['geoId'].upper()
 
         if country_code not in country_fetchers:
             continue

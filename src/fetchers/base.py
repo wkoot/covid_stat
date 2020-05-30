@@ -28,6 +28,7 @@ class DataEntryEncoder(json.JSONEncoder):
 class BaseFetcher(ABC):
     raw_data = []  # type: list
     output_data = []  # type: List[DataEntry]
+    country_codes = []  # type: List[str]
 
     @property
     @abstractmethod
@@ -35,7 +36,7 @@ class BaseFetcher(ABC):
         pass  # ISO 3166-1 alpha-2
 
     def __init__(self) -> None:
-        self.output_file = 'data/{}_{:%Y-%m-%d}.json'.format(self.country_code, datetime.today())
+        self.output_file = 'data/{}_{:%Y-%m-%d}.json'.format(self.country_code.lower(), datetime.today())
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'curl/7.58.0 (+https://doemee.codefor.nl/)',
@@ -52,8 +53,9 @@ class BaseFetcher(ABC):
     def process_entry(self, entry) -> DataEntry:
         pass
 
-    def data_entry(self, first_day: date, last_day: date, deaths: int) -> DataEntry:
-        return DataEntry(country_code=self.country_code, first_day=first_day, last_day=last_day, deaths=deaths)
+    def data_entry(self, first_day: date, last_day: date, deaths: int, country_code=None) -> DataEntry:
+        country_code = country_code or self.country_code
+        return DataEntry(country_code=country_code, first_day=first_day, last_day=last_day, deaths=deaths)
 
     def process(self) -> None:
         for entry in self.raw_data:

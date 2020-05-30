@@ -1,7 +1,6 @@
-from datetime import datetime, date
 from time import sleep
 
-from util import iter_chunks
+from util import iter_chunks, week_to_first_last_dates
 from .base import BaseFetcher
 
 
@@ -9,7 +8,7 @@ class FetcherNL(BaseFetcher):
     """
     Source data - https://data.overheid.nl/dataset/309-overledenen--geslacht-en-leeftijd--per-week
     """
-    country_code = 'nl'
+    country_code = 'NL'  # Netherlands
     intervals = {}
 
     def prepare(self):
@@ -41,16 +40,5 @@ class FetcherNL(BaseFetcher):
         if "JJ" in entry["Perioden"]:
             return None  # period "2019JJ00" indicates data for that entire year
 
-        year = int(entry["Perioden"][0:4])  # int to compare later
-        week_number = int(entry["Perioden"][6:])  # int to strip leading zeros
-        year_week = f"{year}-W{week_number}"  # ISO 8601 Week date
-
-        first_day = datetime.strptime(year_week + "-1", "%G-W%V-%u").date()
-        last_day = datetime.strptime(year_week + "-7", "%G-W%V-%u").date()
-
-        if first_day.year < year:
-            first_day = date(year=year, month=1, day=1)
-        if last_day.year > first_day.year:
-            last_day = date(year=year, month=12, day=31)
-
+        first_day, last_day = week_to_first_last_dates(year=entry["Perioden"][0:4], week=entry["Perioden"][6:])
         return self.data_entry(first_day=first_day, last_day=last_day, deaths=int(entry["Overledenen_1"]))
