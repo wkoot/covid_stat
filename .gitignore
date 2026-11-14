@@ -1,3 +1,14 @@
-/src/build
-/src/dist
-/src/covid_stat.egg-info
+/.idea
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+build
+dist
+sdist
+MANIFEST
+.coverage
+.cache
+.venv/
+venv/
